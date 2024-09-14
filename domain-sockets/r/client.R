@@ -2,10 +2,11 @@ dyn.load("socketr.so")
 
 # Function to print a message in hexadecimal format
 print_message <- function(msg) {
-  data <- msg[[1]]
-  length <- msg[[2]]
-  hex_string <- paste(sprintf("%02x", as.integer(data[1:length])), collapse = " ")
-  cat(hex_string, "\n")
+  print("done")
+  # data <- msg[[1]]
+  # length <- msg[[2]]
+  # hex_string <- paste(sprintf("%02x", as.integer(data[1:length])), collapse = " ")
+  # cat(hex_string, "\n")
 }
 
 # Main function

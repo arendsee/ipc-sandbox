@@ -4,6 +4,10 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <errno.h>
+
 
 #define BUFFER_SIZE 1024
 
@@ -19,6 +23,13 @@ SEXP R_new_socket() {
     }
     UNPROTECT(1);
     return result;
+}
+
+SEXP R_set_nonblocking(SEXP socket_fd) {
+    int fd = asInteger(socket_fd);
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    return R_NilValue;
 }
 
 SEXP R_new_server_addr(SEXP R_SOCKET_PATH) {
@@ -71,13 +82,39 @@ SEXP R_new_server(SEXP R_SOCKET_PATH) {
     return result;
 }
 
-SEXP R_accept_client(SEXP R_server_fd) {
+SEXP R_accept_client(SEXP R_server_fd, SEXP R_timeout) {
     int server_fd = INTEGER(R_server_fd)[0];
+    double timeout = REAL(R_timeout)[0];
+    
+    fd_set readfds;
+    struct timeval tv;
+    
+    FD_ZERO(&readfds);
+    FD_SET(server_fd, &readfds);
+    
+    // convert a decimal representation of time in seconds to seconds + microseconds
+    tv.tv_sec = (int)timeout;
+    tv.tv_usec = (int)((timeout - (int)timeout) * 1e6);
+    
     SEXP result = PROTECT(allocVector(INTSXP, 1));
-    INTEGER(result)[0] = accept(server_fd, NULL, NULL);
+    
+    int ready = select(server_fd + 1, &readfds, NULL, NULL, &tv);
+    
+    if (ready == -1) {
+        // Error occurred
+        INTEGER(result)[0] = -1;
+    } else if (ready == 0) {
+        // Timeout occurred
+        INTEGER(result)[0] = -2;
+    } else {
+        // A client is ready to be accepted
+        INTEGER(result)[0] = accept(server_fd, NULL, NULL);
+    }
+    
     UNPROTECT(1);
     return result;
 }
+
 
 SEXP R_get(SEXP R_client_fd) {
     int client_fd = INTEGER(R_client_fd)[0];
