@@ -1,0 +1,11 @@
+In one window call ping.py
+
+```
+$ python ping.py python_fifo_pipe
+```
+
+Then in another window send in python commands:
+
+```
+$ echo 'print("hi")' > python_fifo_pipe
+```
