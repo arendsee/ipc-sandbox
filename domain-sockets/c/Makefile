@@ -1,6 +1,6 @@
 all:
-	g++ -o cserver server.cpp socket.h
-	g++ -o cclient client.cpp socket.h
+	g++ -o server server.cpp socket.h
+	g++ -o client client.cpp socket.h
 
 clean:
-	rm -f cserver cclient c
+	rm -f server client pipe

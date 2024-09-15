@@ -6,6 +6,8 @@
 #include <cstring>
 #include <sys/un.h>
 #include <unistd.h>
+#include <sys/select.h>
+#include <cmath>
 
 #define BUFFER_SIZE 1024
 
@@ -82,6 +84,47 @@ int accept_client(int server_fd){
     int client_fd = accept(server_fd, nullptr, nullptr);
     return client_fd;
 }
+
+int accept_client(int server_fd, double timeout_seconds) {
+    fd_set readfds;
+    struct timeval tv;
+    int client_fd;
+
+    // Clear the set
+    FD_ZERO(&readfds);
+
+    // Add server socket to the set
+    FD_SET(server_fd, &readfds);
+
+    // Set up the timeout
+    tv.tv_sec = static_cast<long>(floor(timeout_seconds));
+    tv.tv_usec = static_cast<long>((timeout_seconds - tv.tv_sec) * 1e6);
+
+    // Wait for activity on the socket, with timeout
+    int activity = select(server_fd + 1, &readfds, nullptr, nullptr, &tv);
+
+    if (activity < 0) {
+        // Error occurred
+        return -1;
+    } else if (activity == 0) {
+        // Timeout occurred
+        return -2;
+    } else {
+        // There is activity on the socket
+        if (FD_ISSET(server_fd, &readfds)) {
+            // Accept the connection
+            client_fd = accept(server_fd, nullptr, nullptr);
+            return client_fd;
+        }
+    }
+
+    // This should not be reached, but just in case
+    return -1;
+}
+
+
+
+
 
 Message get(int client_fd){
     struct Message result;

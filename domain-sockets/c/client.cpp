@@ -4,7 +4,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <cstring>
-#include <bitset>
 
 #include "socket.h"
 
